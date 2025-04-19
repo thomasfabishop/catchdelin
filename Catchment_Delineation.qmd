@@ -8,6 +8,8 @@ editor: visual
 
 Next step = try with DSM and then DEM.
 
+Make simply directory structure
+
 Calculate stats on each as well.
 
 This document outlines the creation of a GIS database for Muttama which involves delineating the catchment boundaries. It can be used a base for creating a GIS for catchment-scale studies. It is not suitable for field and farm-extent studies.
@@ -33,9 +35,9 @@ library(whitebox)
 Define path to the Excel file with sites and path to out output shapefile. In this case the sites were accessed from Water NSW.
 
 ```{r}
-excel_file <- "../Data/Hydrology/LocationsStreamSites.xlsx"
+excel_file <- "../../Data/Muttama/Data/Hydrology/LocationsStreamSites.xlsx"
 getwd()
-output_shapefile <- "../GIS/Hydrology/StreamSites.shp"
+output_shapefile <- "../../Data/Muttama/GIS/Hydrology/StreamSites.shp"
 ```
 
 Read the Excel file and reproject to WGS84 as we want to work in that CRS which is also good for GEE Apps.
@@ -67,6 +69,17 @@ Now we create bounding box - I asked ChatGPT and added 50km buffer
 -   **Westernmost longitude (min lon):** 149.0
 
 ```{r}
+bbox_coords <- c(xmin = 149.0, ymin = -31.50, xmax = 151.5, ymax = -29.5)
+
+# Create an sf polygon from bounding box
+bbox_poly <- st_as_sfc(st_bbox(bbox_coords, crs = 4326))
+
+# Plot to check
+plot(bbox_poly)
+```
+
+```{r}
+
 dem <- rast("../GIS/Downloads/1_Second_DSM_146602/1_Second_DSM.tif")
 # Extract bounding box
 bbox <- ext(dem)
@@ -93,21 +106,21 @@ Clip DEMh to bbox and write to file.
 ```{r}
 # Clip the raster to the bounding box
 getwd()
-dem<-rast( "../../National/Elevation/DEMh/srtm-1sec-demh-v1-COG.tif")
-dem <- crop(dem, bbox)
+dem<-rast( "../../Data/National/Elevation/DEMh/srtm-1sec-demh-v1-COG.tif")
+dem <- crop(dem, bbox_poly)
 # Plot to visualize
 plot(dem)
-writeRaster(dem, "../GIS/Terrain/demh.tif", overwrite = TRUE)
+writeRaster(dem, "../../Data/GIS/Terrain/demh.tif", overwrite = TRUE)
 ```
 
 Now delineate catchment.
 
 ```{r}
 # Define file paths
-input_dem <- "../GIS/Terrain/demh.tif"  # Replace with the path to your DEM file
+input_dem <- "../../Data/GIS/Terrain/demh.tif"  # Replace with the path to your DEM file
 #proj_dem <- "./GIS/Terrain/1_Second_DSMwgs.tif"  # Replace with the path to your DEM file
-pour_points_file <- "../GIS/Hydrology/StreamSites.shp"  # Replace with your pour points shapefile
-output_dir <- "../GIS/Terrain/"  # Replace with your desired output directory
+pour_points_file <- "../../Data/GIS/Hydrology/StreamSites.shp"  # Replace with your pour points shapefile
+output_dir <- "../..GIS/Terrain/"  # Replace with your desired output directory
 catchment_output <- file.path(output_dir, "catchment_boundariesh.shp")
 
 # Check if input files exist
