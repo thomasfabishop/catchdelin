@@ -35,9 +35,9 @@ library(whitebox)
 Define path to the Excel file with sites and path to out output shapefile. In this case the sites were accessed from Water NSW.
 
 ```{r}
-excel_file <- "../../Data/Muttama/Data/Hydrology/LocationsStreamSites.xlsx"
+excel_file <- "Data/LocationsStreamSites.xlsx"
 getwd()
-output_shapefile <- "../../Data/Muttama/GIS/Hydrology/StreamSites.shp"
+output_shapefile <- "Output/StreamSites.shp"
 ```
 
 Read the Excel file and reproject to WGS84 as we want to work in that CRS which is also good for GEE Apps.
@@ -78,28 +78,9 @@ bbox_poly <- st_as_sfc(st_bbox(bbox_coords, crs = 4326))
 plot(bbox_poly)
 ```
 
-```{r}
+Now read in DEM - I downloaded
 
-dem <- rast("../GIS/Downloads/1_Second_DSM_146602/1_Second_DSM.tif")
-# Extract bounding box
-bbox <- ext(dem)
-
-# Print the bounding box
-print(bbox)
-
-# # # Define the buffer distance (in the same units as the raster CRS)
-# buffer_distance <- 0.01  # Approximately 10km
-# 
-# # Expand the bounding box
-# buffered_bbox <- ext(bbox$xmin - buffer_distance, 
-#                      bbox$xmax + buffer_distance, 
-#                      bbox$ymin - buffer_distance, 
-#                      bbox$ymax + buffer_distance)
-# 
-# print(buffered_bbox)
-# 
-# plot(buffered_bbox)
-```
+Add SLGA cloud
 
 Clip DEMh to bbox and write to file.
 
@@ -110,17 +91,17 @@ dem<-rast( "../../Data/National/Elevation/DEMh/srtm-1sec-demh-v1-COG.tif")
 dem <- crop(dem, bbox_poly)
 # Plot to visualize
 plot(dem)
-writeRaster(dem, "../../Data/GIS/Terrain/demh.tif", overwrite = TRUE)
+writeRaster(dem, "Output/demh.tif", overwrite = TRUE)
 ```
 
-Now delineate catchment.
+Set up - DEM and pur points
 
 ```{r}
 # Define file paths
-input_dem <- "../../Data/GIS/Terrain/demh.tif"  # Replace with the path to your DEM file
+input_dem <- "Output/demh.tif"  # Replace with the path to your DEM file
 #proj_dem <- "./GIS/Terrain/1_Second_DSMwgs.tif"  # Replace with the path to your DEM file
-pour_points_file <- "../../Data/GIS/Hydrology/StreamSites.shp"  # Replace with your pour points shapefile
-output_dir <- "../..GIS/Terrain/"  # Replace with your desired output directory
+pour_points_file <- "Output/StreamSites.shp"  # Replace with your pour points shapefile
+output_dir <- "Output/"  # Replace with your desired output directory
 catchment_output <- file.path(output_dir, "catchment_boundariesh.shp")
 
 # Check if input files exist
@@ -136,13 +117,23 @@ pour_points <- vect(pour_points_file)
 #dem <- project(dem, target_crs)
 #need to write to file to use fill function
 
+```
 
+Fill depresions
+
+```{r{}}
 # Step 1: Fill depressions in the DEM using Whitebox Tools
 filled_dem_file <- file.path(output_dir, "demh.tif")
 wbt_fill_depressions(dem = input_dem, output = filled_dem_file)
 filled_dem <- rast(filled_dem_file)
 
-# Step 2: Calculate flow direction and accumulation using Whitebox Tools
+```
+
+```{r}
+
+```
+
+```{# Step 2: Calculate flow direction and accumulation using Whitebox Tools}
 flow_direction_file <- file.path(output_dir, "flow_direction.tif")
 wbt_d8_pointer(dem = filled_dem_file, output = flow_direction_file)
 flow_direction <- rast(flow_direction_file)
