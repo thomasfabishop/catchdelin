@@ -6,7 +6,8 @@ editor: visual
 
 ## Introduction
 
-Next step = try with DSM and then DEM.
+Next step = add in DSM component
+Next step 2 = Namoi sites
 
 Make simply directory structure
 
@@ -69,7 +70,7 @@ Now we create bounding box - I asked ChatGPT and added 50km buffer
 -   **Westernmost longitude (min lon):** 149.0
 
 ```{r}
-bbox_coords <- c(xmin = 149.0, ymin = -31.50, xmax = 151.5, ymax = -29.5)
+bbox_coords <- c(xmin = 147.5, ymin = -35.2, xmax = 148.5, ymax = -34.0)
 
 # Create an sf polygon from bounding box
 bbox_poly <- st_as_sfc(st_bbox(bbox_coords, crs = 4326))
@@ -111,6 +112,9 @@ if (!file.exists(pour_points_file)) stop("Pour points file not found.")
 # Load DEM and pour points
 dem <- rast(input_dem)
 pour_points <- vect(pour_points_file)
+#check pour points good
+plot(dem)
+points(pour_points)
 
 #target_crs <- "EPSG:4326"
 # Reproject the raster to WGS84
@@ -119,9 +123,9 @@ pour_points <- vect(pour_points_file)
 
 ```
 
-Fill depresions
+Fill depressions
 
-```{r{}}
+```{r}
 # Step 1: Fill depressions in the DEM using Whitebox Tools
 filled_dem_file <- file.path(output_dir, "demh.tif")
 wbt_fill_depressions(dem = input_dem, output = filled_dem_file)
@@ -129,11 +133,10 @@ filled_dem <- rast(filled_dem_file)
 
 ```
 
+
+
 ```{r}
-
-```
-
-```{# Step 2: Calculate flow direction and accumulation using Whitebox Tools}
+# Step 2: Calculate flow direction and accumulation using Whitebox Tools}
 flow_direction_file <- file.path(output_dir, "flow_direction.tif")
 wbt_d8_pointer(dem = filled_dem_file, output = flow_direction_file)
 flow_direction <- rast(flow_direction_file)
@@ -141,7 +144,11 @@ flow_direction <- rast(flow_direction_file)
 flow_accumulation_file <- file.path(output_dir, "flow_accumulation.tif")
 wbt_d8_flow_accumulation(input = filled_dem_file, output = flow_accumulation_file)
 flow_accumulation <- rast(flow_accumulation_file)
+```
 
+
+
+```{r}
 # Step 3: Snap pour points to the nearest stream using Whitebox Tools
 snapped_pour_points_file <- file.path(output_dir, "snapped_pour_points.shp")
 wbt_snap_pour_points(
@@ -152,7 +159,10 @@ wbt_snap_pour_points(
 )
 
 snapped_pour_points <- vect(snapped_pour_points_file)
+```
 
+
+```{r}
 # Step 4: Delineate catchments using Whitebox Tools
 catchments_raster_file <- file.path(output_dir, "catchmentsh.tif")
 wbt_watershed(
@@ -161,7 +171,10 @@ wbt_watershed(
   output = catchments_raster_file
 )
 catchments_raster <- rast(catchments_raster_file)
+```
 
+
+```{r}
 # Step 5: Convert raster catchments to vector boundaries
 catchment_boundariesh <- as.polygons(catchments_raster, dissolve = TRUE)
 writeVector(catchment_boundariesh, catchment_output, overwrite = TRUE)
@@ -176,21 +189,21 @@ Clip DEMs to bbox and write to file.
 ```{r}
 # Clip the raster to the bounding box
 getwd()
-dem<-rast( "../../National/Elevation/DEMs/srtm-1sec-dems-v1-COG.tif")
-dem <- crop(dem, bbox)
+dem<-rast( "../../Data/National/Elevation/DEMs/srtm-1sec-dems-v1-COG.tif")
+dem <- crop(dem, bbox_poly)
 # Plot to visualize
 plot(dem)
-writeRaster(dem, "../GIS/Terrain/dems.tif", overwrite = TRUE)
+writeRaster(dem, "Output/dems.tif", overwrite = TRUE)
 ```
 
 Now delineate catchment.
 
 ```{r}
 # Define file paths
-input_dem <- "../GIS/Terrain/dems.tif"  # Replace with the path to your DEM file
+input_dem <- "Output/dems.tif"  # Replace with the path to your DEM file
 #proj_dem <- "./GIS/Terrain/1_Second_DSMwgs.tif"  # Replace with the path to your DEM file
-pour_points_file <- "../GIS/Hydrology/StreamSites.shp"  # Replace with your pour points shapefile
-output_dir <- "../GIS/Terrain/"  # Replace with your desired output directory
+pour_points_file <- "Output/StreamSites.shp"  # Replace with your pour points shapefile
+output_dir <- "Output/"  # Replace with your desired output directory
 catchment_output <- file.path(output_dir, "catchment_boundariess.shp")
 
 # Check if input files exist
@@ -255,21 +268,21 @@ Clip DEM to bbox and write to file.
 ```{r}
 # Clip the raster to the bounding box
 getwd()
-dem<-rast( "../../National/Elevation/DEM/srtm-1sec-dem-v1-COG.tif")
-dem <- crop(dem, bbox)
+dem<-rast( "../../Data/National/Elevation/DEM/srtm-1sec-dem-v1-COG.tif")
+dem <- crop(dem, bbox_poly)
 # Plot to visualize
 plot(dem)
-writeRaster(dem, "../GIS/Terrain/dem.tif", overwrite = TRUE)
+writeRaster(dem, "Output/dem.tif", overwrite = TRUE)
 ```
 
 Now delineate catchment.
 
 ```{r}
 # Define file paths
-input_dem <- "../GIS/Terrain/dem.tif"  # Replace with the path to your DEM file
+input_dem <- "Output/dem.tif"  # Replace with the path to your DEM file
 #proj_dem <- "./GIS/Terrain/1_Second_DSMwgs.tif"  # Replace with the path to your DEM file
-pour_points_file <- "../GIS/Hydrology/StreamSites.shp"  # Replace with your pour points shapefile
-output_dir <- "../GIS/Terrain/"  # Replace with your desired output directory
+pour_points_file <- "Output/StreamSites.shp"  # Replace with your pour points shapefile
+output_dir <- "Output/"  # Replace with your desired output directory
 catchment_output <- file.path(output_dir, "catchment_boundaries.shp")
 
 # Check if input files exist
